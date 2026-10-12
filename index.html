@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="description" content="A responsive Snake game prototype. Play on desktop or mobile.">
+  <title>Snake — Stage 1</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#" aria-label="Snake home"><span class="brand-mark">S</span><span>SNAKE<span class="brand-light">.LAB</span></span></a>
+      <span class="stage-pill"><span class="status-dot"></span> STAGE 01 · PROTOTYPE</span>
+    </header>
+
+    <section class="intro">
+      <p class="eyebrow">CLASSIC ARCADE · REBUILT</p>
+      <h1>One more <span>bite.</span></h1>
+      <p class="intro-copy">Eat, grow, and beat your best. Your score is saved on this device.</p>
+    </section>
+
+    <section class="game-layout" aria-label="Snake game">
+      <div class="game-column">
+        <div class="stats-row">
+          <div class="stat-card"><span class="stat-label">SCORE</span><strong id="score">000</strong></div>
+          <div class="stat-card"><span class="stat-label">PERSONAL BEST</span><strong id="best">000</strong></div>
+          <div class="stat-card speed-card"><span class="stat-label">PACE</span><strong id="pace">CALM</strong></div>
+        </div>
+        <div class="board-frame">
+          <canvas id="game" width="600" height="600" aria-label="Snake game board" role="img"></canvas>
+          <div class="overlay" id="overlay">
+            <div class="overlay-icon" id="overlayIcon">▶</div>
+            <p class="overlay-kicker" id="overlayKicker">READY WHEN YOU ARE</p>
+            <h2 id="overlayTitle">Let's play.</h2>
+            <p id="overlayText">Collect the glowing fruit. Don't hit the walls or yourself.</p>
+            <button class="primary-btn" id="startBtn">Start game <span>↗</span></button>
+          </div>
+        </div>
+        <div class="game-actions">
+          <button class="secondary-btn" id="pauseBtn" disabled>Ⅱ <span>Pause</span></button>
+          <button class="secondary-btn" id="restartBtn">↻ <span>Restart</span></button>
+          <span class="keyboard-hint"><kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> or WASD</span>
+        </div>
+        <div class="mobile-controls" aria-label="Touch controls">
+          <button class="dir-btn up" data-dir="up" aria-label="Move up">↑</button>
+          <div class="dir-row"><button class="dir-btn" data-dir="left" aria-label="Move left">←</button><button class="dir-btn" data-dir="down" aria-label="Move down">↓</button><button class="dir-btn" data-dir="right" aria-label="Move right">→</button></div>
+        </div>
+      </div>
+
+      <aside class="side-panel">
+        <div class="panel-block howto-block">
+          <p class="panel-label">HOW TO PLAY</p>
+          <h3>Keep moving.</h3>
+          <ul class="howto-list">
+            <li><span class="howto-number">01</span><span>Eat the <b>glowing fruit</b> to grow.</span></li>
+            <li><span class="howto-number">02</span><span>Each fruit adds <b>10 points</b>.</span></li>
+            <li><span class="howto-number">03</span><span>Avoid walls and your own tail.</span></li>
+          </ul>
+        </div>
+        <div class="panel-block goal-block">
+          <div class="goal-icon">✦</div>
+          <div><p class="panel-label">YOUR MISSION</p><h3>Beat your best.</h3><p class="muted-copy">A little focus goes a long way.</p></div>
+        </div>
+        <div class="panel-footer"><span class="live-dot"></span> OFF-CHAIN DEMO <span class="footer-separator">·</span> NO WALLET NEEDED</div>
+      </aside>
+    </section>
+
+    <footer class="site-footer"><span>Snake.lab · Stage 01</span><span>Prototype only — scores are stored locally in your browser.</span></footer>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
