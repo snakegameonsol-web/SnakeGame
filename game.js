@@ -431,7 +431,7 @@
   startBtn.addEventListener('click', startGame);
   pauseBtn.addEventListener('click', togglePause);
   restartBtn.addEventListener('click', () => { resetGame(false); startGame(); });
-  fullscreenBtn.addEventListener('click', toggleFullscreen);
+  if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreen);
   document.addEventListener('fullscreenchange', updateFullscreenButton);
 
   async function toggleFullscreen() {
@@ -452,6 +452,7 @@
 
   function updateFullscreenButton() {
     const isFullscreen = Boolean(document.fullscreenElement);
+    if (!fullscreenBtn) return;
     fullscreenBtn.innerHTML = isFullscreen ? '⛶ <span>Exit full screen</span>' : '⛶ <span>Full screen</span>';
     fullscreenBtn.setAttribute('aria-label', isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen');
   }
