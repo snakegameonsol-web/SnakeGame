@@ -4,3 +4,22 @@
 @media(max-width:800px){.game-layout{grid-template-columns:1fr}.side-panel{display:grid;grid-template-columns:1fr 1fr}.goal-block{border-top:0;border-left:1px solid var(--line)}.panel-footer{grid-column:1/-1}.intro{padding-top:32px}.side-panel{margin-top:2px}}
 @media(max-width:520px){.app-shell{width:calc(100% - 24px)}.topbar{height:68px}.stage-pill{font-size:8px;padding:8px}.brand{font-size:12px}.intro{padding:29px 0 20px}.intro-copy{font-size:12px}.stats-row{gap:7px}.stat-card{padding:11px 10px;border-radius:10px}.stat-label{font-size:8px;letter-spacing:.06em}.stat-card strong{font-size:20px}.speed-card strong{font-size:13px}.board-frame{border-radius:13px}.game-actions{gap:7px}.secondary-btn{padding:10px}.keyboard-hint{font-size:8px;gap:3px}.keyboard-hint kbd{font-size:8px;padding:3px}.mobile-controls{display:flex}.side-panel{grid-template-columns:1fr}.goal-block{border-left:0;border-top:1px solid var(--line)}.panel-block{padding:19px}.site-footer{font-size:8px;line-height:1.7;flex-direction:column;gap:4px}.site-footer span:last-child{text-align:left}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+
+/* Stage 2: online leaderboard */
+.leaderboard-block{border-top:1px solid var(--line)}
+.player-label{display:block;color:var(--muted);font-size:11px;margin:0 0 7px}
+.player-row{display:flex;gap:8px;align-items:center}
+.player-input{min-width:0;flex:1;background:#0b1324;border:1px solid #35415b;border-radius:9px;color:var(--text);padding:10px 11px;font:12px Manrope,system-ui,sans-serif;outline:none}
+.player-input:focus{border-color:var(--lime)}
+.save-name-btn{padding:10px 12px;justify-content:center}
+.score-status{font-size:11px;line-height:1.6;color:var(--muted);margin:11px 0}
+.score-status.status-success{color:var(--lime)}
+.score-status.status-error{color:#ff8798}
+.leaderboard-list{list-style:none;margin:0;padding:0;display:grid;gap:7px}
+.leaderboard-item{display:grid;grid-template-columns:26px minmax(0,1fr) auto;align-items:center;gap:8px;padding:9px 10px;border:1px solid rgba(142,154,180,.13);border-radius:8px;background:#0c1426;font-size:11px}
+.leaderboard-rank{font:10px 'DM Mono',monospace;color:var(--muted)}
+.leaderboard-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e5eaff}
+.leaderboard-score{font:12px 'DM Mono',monospace;color:var(--lime)}
+.leaderboard-empty{font-size:11px;line-height:1.6;color:var(--muted);padding:10px 0}
+.refresh-btn{margin-top:12px;justify-content:center;width:100%}
+@media(max-width:800px){.leaderboard-block{grid-column:1/-1;border-top:1px solid var(--line)}}

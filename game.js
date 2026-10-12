@@ -14,6 +14,14 @@
   const startBtn = document.getElementById('startBtn');
   const pauseBtn = document.getElementById('pauseBtn');
   const restartBtn = document.getElementById('restartBtn');
+  const playerNameInput = document.getElementById('playerName');
+  const saveNameBtn = document.getElementById('saveNameBtn');
+  const scoreSubmitStatus = document.getElementById('scoreSubmitStatus');
+  const leaderboardList = document.getElementById('leaderboardList');
+  const refreshLeaderboardBtn = document.getElementById('refreshLeaderboardBtn');
+
+  // Public API URL for the Render backend. Never put Supabase secret keys here.
+  const API_BASE = 'https://snake-gmae-api.onrender.com';
 
   const CELLS = 25;
   const CELL = canvas.width / CELLS;
@@ -33,6 +41,102 @@
   }
 
   function formatScore(value) { return String(value).padStart(3, '0'); }
+
+  function getPlayerName() {
+    const name = (playerNameInput.value || '').trim();
+    return name;
+  }
+
+  function setScoreStatus(message, kind = '') {
+    scoreSubmitStatus.textContent = message;
+    scoreSubmitStatus.classList.remove('status-error', 'status-success');
+    if (kind) scoreSubmitStatus.classList.add(kind === 'error' ? 'status-error' : 'status-success');
+  }
+
+  function savePlayerName() {
+    const name = getPlayerName();
+    if (name.length < 2 || name.length > 20) {
+      setScoreStatus('Name must be 2–20 characters.', 'error');
+      playerNameInput.focus();
+      return false;
+    }
+    try { localStorage.setItem('snakeLabPlayerNameV1', name); } catch { /* storage may be blocked */ }
+    setScoreStatus(`Name saved as ${name}.`);
+    return true;
+  }
+
+  async function submitScore(finalScore) {
+    if (!Number.isInteger(finalScore) || finalScore < 1) {
+      setScoreStatus('No points to submit this run.');
+      return;
+    }
+    if (!savePlayerName()) return;
+    const displayName = getPlayerName();
+    setScoreStatus('Submitting your score…');
+    try {
+      const response = await fetch(`${API_BASE}/api/scores`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ display_name: displayName, score: finalScore })
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const message = result.error || result.message || `Server returned ${response.status}`;
+        throw new Error(message);
+      }
+      setScoreStatus(`Score ${finalScore} submitted successfully!`, 'success');
+      await loadLeaderboard();
+    } catch (error) {
+      setScoreStatus(`Could not submit score: ${error.message}. Try again later.`, 'error');
+    }
+  }
+
+  async function loadLeaderboard() {
+    leaderboardList.replaceChildren();
+    const loading = document.createElement('li');
+    loading.className = 'leaderboard-empty';
+    loading.textContent = 'Loading scores…';
+    leaderboardList.appendChild(loading);
+    try {
+      const response = await fetch(`${API_BASE}/api/leaderboard`);
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || `Server returned ${response.status}`);
+      const rows = Array.isArray(result) ? result :
+        Array.isArray(result.scores) ? result.scores :
+        Array.isArray(result.leaderboard) ? result.leaderboard :
+        Array.isArray(result.data) ? result.data : [];
+      leaderboardList.replaceChildren();
+      if (!rows.length) {
+        const empty = document.createElement('li');
+        empty.className = 'leaderboard-empty';
+        empty.textContent = 'No scores yet. Be the first!';
+        leaderboardList.appendChild(empty);
+        return;
+      }
+      rows.slice(0, 20).forEach((entry, index) => {
+        const item = document.createElement('li');
+        item.className = 'leaderboard-item';
+        const rank = document.createElement('span');
+        rank.className = 'leaderboard-rank';
+        rank.textContent = String(index + 1).padStart(2, '0');
+        const name = document.createElement('span');
+        name.className = 'leaderboard-name';
+        name.textContent = String(entry.display_name || 'Player');
+        const scoreValue = document.createElement('strong');
+        scoreValue.className = 'leaderboard-score';
+        scoreValue.textContent = String(Number(entry.score) || 0);
+        item.append(rank, name, scoreValue);
+        leaderboardList.appendChild(item);
+      });
+    } catch (error) {
+      leaderboardList.replaceChildren();
+      const item = document.createElement('li');
+      item.className = 'leaderboard-empty';
+      item.textContent = 'Leaderboard unavailable. Check your connection and refresh.';
+      leaderboardList.appendChild(item);
+      console.error('Leaderboard error:', error);
+    }
+  }
 
   function setOverlay(mode) {
     overlay.classList.remove('hidden');
@@ -176,6 +280,8 @@
     pauseBtn.disabled = true;
     setOverlay('over');
     draw();
+    if (score > 0) submitScore(score);
+    else setScoreStatus('Score 0 was not submitted. Play again to earn points.');
   }
 
   function setDirection(name) {
@@ -287,6 +393,11 @@
   startBtn.addEventListener('click', startGame);
   pauseBtn.addEventListener('click', togglePause);
   restartBtn.addEventListener('click', () => resetGame(true));
+  saveNameBtn.addEventListener('click', savePlayerName);
+  refreshLeaderboardBtn.addEventListener('click', loadLeaderboard);
+  playerNameInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') savePlayerName();
+  });
 
   canvas.addEventListener('pointerdown', event => {
     touchStart = { x: event.clientX, y: event.clientY };
@@ -305,6 +416,11 @@
     if (document.hidden && state === 'running') pauseGame();
   });
 
+  try {
+    const savedName = localStorage.getItem('snakeLabPlayerNameV1');
+    if (savedName) playerNameInput.value = savedName;
+  } catch { /* storage may be blocked */ }
   best = readBest();
   resetGame(false);
+  loadLeaderboard();
 })();
