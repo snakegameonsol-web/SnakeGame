@@ -35,6 +35,8 @@
   let snake, direction, nextDirection, food, score, best, state, timer, lastTick;
   let touchStart = null;
   let animationFrame = null;
+  let gameSessionId = null;
+  let sessionStarting = false;
 
   function readBest() {
     try { return Math.max(0, Number(localStorage.getItem(STORAGE_KEY)) || 0); }
@@ -66,30 +68,48 @@
     return true;
   }
 
-  async function submitScore(finalScore) {
+  async function submitScore(finalScore, sessionId = gameSessionId) {
     if (!Number.isInteger(finalScore) || finalScore < 1) {
       setScoreStatus('No points to submit this run.');
       return;
     }
+    if (!sessionId) {
+      setScoreStatus('This run has no valid server session. Start a new game and try again.', 'error');
+      return;
+    }
     if (!savePlayerName()) return;
     const displayName = getPlayerName();
-    setScoreStatus('Submitting your score…');
+    setScoreStatus('Checking and submitting your score…');
     try {
       const response = await fetch(`${API_BASE}/api/scores`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ display_name: displayName, score: finalScore })
+        body: JSON.stringify({ game_id: sessionId, display_name: displayName, score: finalScore })
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok) {
         const message = result.error || result.message || `Server returned ${response.status}`;
         throw new Error(message);
       }
-      setScoreStatus(`Score ${finalScore} submitted successfully!`, 'success');
+      if (gameSessionId === sessionId) gameSessionId = null;
+      setScoreStatus(`Score ${finalScore} verified and submitted!`, 'success');
       await loadLeaderboard();
     } catch (error) {
-      setScoreStatus(`Could not submit score: ${error.message}. Try again later.`, 'error');
+      setScoreStatus(`Score was not accepted: ${error.message}.`, 'error');
     }
+  }
+
+  async function createGameSession() {
+    const response = await fetch(`${API_BASE}/api/games/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || typeof result.game_id !== 'string') {
+      throw new Error(result.error || `Server returned ${response.status}`);
+    }
+    return result.game_id;
   }
 
   async function loadLeaderboard() {
@@ -173,6 +193,7 @@
 
   function resetGame(shouldStart = false) {
     clearTimeout(timer);
+    gameSessionId = null;
     snake = [
       { x: 12, y: 12 }, { x: 11, y: 12 }, { x: 10, y: 12 },
       { x: 9, y: 12 }
@@ -182,14 +203,14 @@
     score = 0;
     best = readBest();
     food = makeFood();
-    state = shouldStart ? 'running' : 'ready';
+    state = 'ready';
     lastTick = 0;
     updateStats();
-    pauseBtn.disabled = !shouldStart;
+    pauseBtn.disabled = true;
     pauseBtn.innerHTML = 'Ⅱ <span>Pause</span>';
-    if (shouldStart) hideOverlay(); else setOverlay('ready');
+    setOverlay('ready');
     draw();
-    if (shouldStart) scheduleTick();
+    if (shouldStart) startGame();
   }
 
   function makeFood() {
@@ -203,7 +224,7 @@
     return available[Math.floor(Math.random() * available.length)];
   }
 
-  function startGame() {
+  async function startGame() {
     if (state === 'paused') {
       state = 'running';
       hideOverlay();
@@ -212,13 +233,29 @@
       scheduleTick();
       return;
     }
-    if (state === 'over') resetGame(false);
-    state = 'running';
-    hideOverlay();
-    pauseBtn.disabled = false;
-    pauseBtn.innerHTML = 'Ⅱ <span>Pause</span>';
-    lastTick = 0;
-    scheduleTick();
+    if (sessionStarting || state === 'running') return;
+    if (state === 'over' || state === 'won') resetGame(false);
+
+    sessionStarting = true;
+    startBtn.disabled = true;
+    setScoreStatus('Preparing a verified game session…');
+    try {
+      gameSessionId = await createGameSession();
+      state = 'running';
+      hideOverlay();
+      pauseBtn.disabled = false;
+      pauseBtn.innerHTML = 'Ⅱ <span>Pause</span>';
+      lastTick = 0;
+      scheduleTick();
+    } catch (error) {
+      gameSessionId = null;
+      state = 'ready';
+      setOverlay('ready');
+      setScoreStatus(`Could not start a verified game: ${error.message}. Check your connection and try again.`, 'error');
+    } finally {
+      sessionStarting = false;
+      startBtn.disabled = false;
+    }
   }
 
   function pauseGame() {
@@ -281,7 +318,7 @@
     pauseBtn.disabled = true;
     setOverlay('over');
     draw();
-    if (score > 0) submitScore(score);
+    if (score > 0) submitScore(score, gameSessionId);
     else setScoreStatus('Score 0 was not submitted. Play again to earn points.');
   }
 
@@ -393,8 +430,8 @@
   });
   startBtn.addEventListener('click', startGame);
   pauseBtn.addEventListener('click', togglePause);
-  restartBtn.addEventListener('click', () => resetGame(true));
-  fullscreenBtn.addEventListener('click', toggleFullscreen);
+  restartBtn.addEventListener('click', () => { resetGame(false); startGame(); });
+  if (fullscreenBtn) fullscreenBtn.addEventListener('click', toggleFullscreen);
   document.addEventListener('fullscreenchange', updateFullscreenButton);
 
   async function toggleFullscreen() {
@@ -415,6 +452,7 @@
 
   function updateFullscreenButton() {
     const isFullscreen = Boolean(document.fullscreenElement);
+    if (!fullscreenBtn) return;
     fullscreenBtn.innerHTML = isFullscreen ? '⛶ <span>Exit full screen</span>' : '⛶ <span>Full screen</span>';
     fullscreenBtn.setAttribute('aria-label', isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen');
   }
